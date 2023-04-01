@@ -3,7 +3,7 @@
 
 # Backend課題
 
-# Docker
+# Docker（着手＆未完）
 
 Youtube：[https://www.youtube.com/watch?v=lZD1MIHwMBY](https://www.youtube.com/watch?v=lZD1MIHwMBY)
 
@@ -14,19 +14,19 @@ Youtube：[https://www.youtube.com/watch?v=R7FtZfT6YBI](https://www.youtube.com/
 Udemy：[https://www.udemy.com/course/devops-gha-aws-infra/](https://www.udemy.com/course/devops-gha-aws-infra/)
 
 
-# PostgreSQL(SQL)
+# PostgreSQL(SQL)（済　あとはSQL練習）
 
 Youtube：[https://www.youtube.com/watch?v=v-Mb2voyTbc](https://www.youtube.com/watch?v=v-Mb2voyTbc)
 
 Youtube：[https://www.youtube.com/watch?v=CJQDh_mJ1as&t=4s](https://www.youtube.com/watch?v=CJQDh_mJ1as&t=4s)
 
-# Golang
+# Golangr（着手＆未完）
+①Udemy：[https://www.udemy.com/course/golang-webgosql/](https://www.udemy.com/course/golang-webgosql/)
 
-Youtube：[https://www.youtube.com/watch?v=kPXfMFJ0oIE](https://www.youtube.com/watch?v=kPXfMFJ0oIE)
+②Youtube：[https://www.youtube.com/watch?v=kPXfMFJ0oIE](https://www.youtube.com/watch?v=kPXfMFJ0oIE)
 
-& [https://www.youtube.com/watch?v=jFfo23yIWac](https://www.youtube.com/watch?v=jFfo23yIWac)
+③Youtube： [https://www.youtube.com/watch?v=jFfo23yIWac](https://www.youtube.com/watch?v=jFfo23yIWac)
 
-Udemy：[https://www.udemy.com/course/golang-webgosql/](https://www.udemy.com/course/golang-webgosql/)
 
 # gRPC
 
