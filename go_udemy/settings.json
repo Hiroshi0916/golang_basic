@@ -1,9 +1,0 @@
-{
-    "editor.formatOnSave": true,
-    "[go]": {
-      "editor.codeActionsOnSave": {
-        "source.organizeImports": true
-      }
-    }
-  }
-  
