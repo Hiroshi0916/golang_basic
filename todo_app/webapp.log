@@ -1,3 +1,5 @@
-2023/04/26 06:59:38 main.go:15: test
-2023/04/26 07:07:06 main.go:16: test
-2023/04/26 07:25:42 main.go:16: test
+2023/05/12 23:01:44 server.go:12: Failed to start server: listen tcp :8080: bind: address already in use
+2023/05/12 23:04:14 server.go:12: Failed to start server: listen tcp :8080: bind: address already in use
+2023/05/12 23:07:38 server.go:12: Failed to start server: listen tcp :8080: bind: address already in use
+2023/05/12 23:31:10 server.go:13: Failed to start server: listen tcp :8080: bind: address already in use
+2023/05/12 23:52:31 server.go:16: Failed to start server: listen tcp :8080: bind: address already in use
