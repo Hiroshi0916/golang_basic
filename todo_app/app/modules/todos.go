@@ -13,7 +13,11 @@ type Todo struct {
 }
 
 func (u *User) CreateTodo(content string) (err error) {
-	cmd := `insert into todos (content, user_id, created_at) values(?,?,?)`
+	cmd := `insert into todos (
+		content,
+		user_id,
+		created_at) values(?, ?, ?)`
+
 	_, err = Db.Exec(cmd, content, u.ID, time.Now())
 	if err != nil {
 		log.Fatal(err)
@@ -25,6 +29,7 @@ func GetTodo(id int) (todo Todo, err error) {
 	cmd := `select id,content,user_id,created_at from todos
 	where id = ?`
 	todo = Todo{}
+
 	err = Db.QueryRow(cmd, id).Scan(
 		&todo.ID,
 		&todo.Content,
@@ -51,11 +56,13 @@ func GetTodos() (todos []Todo, err error) {
 		}
 		todos = append(todos, todo)
 	}
+	rows.Close()
+
 	return todos, err
 }
 
-func (u *User) GetTodosByuser() (todos []Todo, err error) {
-	cmd := `select id , content, user_id,created_at from todos
+func (u *User) GetTodosByUser() (todos []Todo, err error) {
+	cmd := `select id , content, user_id, created_at from todos
 	where user_id = ?`
 
 	rows, err := Db.Query(cmd, u.ID)

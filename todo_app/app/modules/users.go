@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
@@ -14,7 +15,7 @@ type User struct {
 	CreatedAt time.Time
 }
 
-func (u *User) CreateUser() (err error) {
+func (u *User) CreateUser() (int64, error) {
 	cmd := `insert into users(
 		uuid,
 		name,
@@ -22,7 +23,7 @@ func (u *User) CreateUser() (err error) {
 		password,
 		created_at) values(?,?,?,?,?)`
 
-	_, err = Db.Exec(cmd,
+	result, err := Db.Exec(cmd,
 		createUUID(),
 		u.Name,
 		u.Email,
@@ -32,7 +33,13 @@ func (u *User) CreateUser() (err error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return err
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("User created with ID: %d\n", id)
+	return id, err
 }
 
 func GetUser(id int) (user User, err error) {
