@@ -72,3 +72,18 @@ func (u *User) DeleteUser() (err error) {
 	}
 	return err
 }
+
+func GetUserByEmail(email string) (User, error) {
+	var user User
+	cmd := `SELECT * FROM users WHERE email = ?`
+	err := Db.QueryRow(cmd, email).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.PassWord, &user.CreatedAt)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+type Session struct {
+	UUID      string
+	CreatedAt time.Time
+}
