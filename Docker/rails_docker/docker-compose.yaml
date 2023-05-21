@@ -2,18 +2,11 @@ version: '3.9'
 services:
   db:
     image: mysql:8.0
-    # environment:
-    #   MYSQL_ROOT_PASSWORD: password
-    # volumes:
-    #   - db-data:/var/lib/mysql
-
-    command: --default-authentication-plugin=mysql_native_password
     volumes:
-    - ./src/db/mysql_data:/var/lib/mysql
+      - new_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: password
-
-
   web:
     build: .
     command: bundle exec rails s -p 3000 -b '0.0.0.0'
@@ -26,4 +19,5 @@ services:
       - db
 
 volumes:
-  bundle_cache: # この行を追加します。
+  bundle_cache:
+  new_mysql_data:

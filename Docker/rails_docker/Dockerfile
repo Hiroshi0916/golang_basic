@@ -1,5 +1,7 @@
 FROM ruby:2.7
 
+ENV RAILS_ENV = production
+
 # Install dependencies
 RUN apt-get update -qq && apt-get install -y nodejs postgresql-client
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
@@ -20,3 +22,6 @@ COPY ./src /app
 
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
 
+COPY start.sh /start.sh
+RUN chmod 744 /start.sh
+CMD ["sh", "/start.sh"]
