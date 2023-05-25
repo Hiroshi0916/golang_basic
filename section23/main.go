@@ -2,74 +2,80 @@ package main
 
 import (
 	"fmt"
-	"time"
 )
 
-func generator() <-chan int {
-	intStream := make(chan int)
+func generator(done <-chan interface{}) <-chan interface{} {
+	intChan := make(chan interface{})
 
 	go func() {
-		defer close(intStream)
+		defer fmt.Println("generator Done")
+		defer close(intChan)
 
-		for i := 0; i <= 100; i++ {
-			intStream <- i
+		for i := 0; i < 100; i++ {
+			select {
+			case <-done:
+				return
+			case intChan <- i:
+			}
 		}
 	}()
-	return intStream
+	return intChan
 }
 
-func signal(after time.Duration) <-chan interface{} {
-	done := make(chan interface{})
-
+func orDone(done, c <-chan interface{}) <-chan interface{} {
+	valChan := make(chan interface{})
 	go func() {
-		defer close(done)
-		defer fmt.Println("signal Done")
-
-		time.Sleep(after)
-	}()
-	return done
-}
-
-func orDone(done <-chan interface{}, c <-chan int) <-chan interface{} {
-	valCh := make(chan interface{})
-	go func() {
-		defer close(valCh)
+		defer close(valChan)
 
 		for {
 			select {
 			case <-done:
 				return
-
 			case v, ok := <-c:
 				if !ok {
 					return
 				}
 				select {
-				case valCh <- v:
+				case valChan <- v:
 				case <-done:
 				}
 			}
 		}
 	}()
-	return valCh
+	return valChan
+}
+
+func tee(done, c <-chan interface{}) (<-chan interface{}, <-chan interface{}) {
+	out1 := make(chan interface{})
+	out2 := make(chan interface{})
+
+	go func() {
+		defer close(out1)
+		defer close(out1)
+
+		for v := range orDone(done, c) {
+			var Out1, Out2 = out1, out2
+
+			for i := 0; i < 2; i++ {
+				select {
+				case Out1 <- v:
+					Out1 = nil
+				case Out2 <- v:
+					Out2 = nil
+				}
+			}
+
+		}
+	}()
+	return out1, out2
 }
 
 func main() {
-	start := time.Now()
-	done := signal(10 * time.Second)
-	intStream := generator()
-loop:
-	for {
-		select {
-		case <-done:
-			break loop
-		case val, ok := <-intStream:
-			if !ok {
-				break loop
-			}
-			fmt.Println(val)
-		}
-	}
 
-	fmt.Println(time.Since(start))
+	done := make(chan interface{})
+
+	out1, out2 := tee(done, generator(done))
+	for v1 := range out1 {
+		fmt.Printf("out1: %v,out2: %v\n", v1, <-out2)
+	}
 }
