@@ -3,66 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
 )
 
-func shortProcess(ctx context.Context) (bool, error) {
-	shortWork := time.NewTicker(1 * time.Second)
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
-	defer cancel()
+type ctxKey int
 
-	select {
-	case <-ctx.Done():
-		return false, fmt.Errorf("cancel")
-	case <-shortWork.C:
-	}
-	return true, nil
+const (
+	ctxUserID ctxKey = iota
+	ctxAuthToken
+)
+
+func Set(userID, authToken string) context.Context {
+	ctx := context.WithValue(context.Background(), ctxUserID, userID)
+	ctx = context.WithValue(ctx, ctxAuthToken, authToken)
+	return ctx
 }
 
-func longProcess(ctx context.Context) (bool, error) {
-	longWork := time.NewTicker(5 * time.Second)
-
-	select {
-	case <-ctx.Done():
-		return false, fmt.Errorf("cancel")
-	case <-longWork.C:
-	}
-	return true, nil
+func Get(ctx context.Context) {
+	fmt.Printf("userID: %v,authToken: %v\n", ctx.Value(ctxUserID), ctx.Value(ctxAuthToken))
 }
 
 func main() {
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		if isDone, err := shortProcess(ctx); err != nil {
-			fmt.Printf("shortProcess: %v\n", err)
-			fmt.Println(isDone)
-
-			cancel()
-
-			return
-		}
-		fmt.Println("shortProcess is Done")
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		if isDone, err := longProcess(ctx); err != nil {
-			fmt.Printf("longProcess: %v\n", err)
-			fmt.Println(isDone)
-
-			return
-		}
-		fmt.Println("longProcess is Done")
-	}()
-
-	wg.Wait()
+	ctx := Set("12345", "abc123")
+	Get(ctx)
 }
