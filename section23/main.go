@@ -2,45 +2,79 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"strings"
+	"time"
 )
 
-func readGoFile(path string) chan string {
-	promise := make(chan string)
+func DoWorkVer1(done <-chan interface{}, palseInterval time.Duration) (<-chan interface{}, <-chan time.Time) {
+	heartbeat := make(chan interface{})
+	results := make(chan time.Time)
 
 	go func() {
-		defer close(promise)
-		content, err := ioutil.ReadFile(path)
-		if err != nil {
-			fmt.Printf("read error: %v\n", err.Error())
-		} else {
-			promise <- string(content)
-		}
-	}()
-	return promise
-}
+		defer close(heartbeat)
+		defer close(results)
+		heartbeatPulse := time.Tick(palseInterval)
+		workGen := time.Tick(2 * palseInterval)
 
-func printFunc(futureSource chan string) chan []string {
-	promise := make(chan []string)
+		sendHeartBeatPulse := func() {
+			select {
+			case heartbeat <- struct{}{}:
+			default:
 
-	go func() {
-		defer close(promise)
-		var result []string
-
-		for _, line := range strings.Split(<-futureSource, "\n") {
-			if strings.HasPrefix(line, "func") {
-				result = append(result, line)
 			}
 		}
-		promise <- result
+		sendResult := func(result time.Time) {
+			for {
+				select {
+				case <-done:
+					return
+
+				case <-heartbeatPulse:
+					sendHeartBeatPulse()
+
+				case results <- result.Local():
+					return
+				}
+			}
+		}
+
+		for {
+			select {
+			case <-done:
+				return
+
+			case <-heartbeatPulse:
+				sendHeartBeatPulse()
+
+			case result := <-workGen:
+				sendResult(result)
+			}
+		}
 	}()
-	return promise
+	return heartbeat, results
 }
 
 func main() {
-	futureSource := readGoFile("main.go")
-	futureFunc := printFunc(futureSource)
+	done := make(chan interface{})
+	timeout := 2 * time.Second
+	heartbeat, results := DoWorkVer1(done, timeout/2)
 
-	fmt.Println(strings.Join(<-futureFunc, "\n"))
+	for {
+		select {
+		case _, ok := <-heartbeat:
+			if !ok {
+				return
+			}
+			fmt.Println("receive heatbeat")
+
+		case r, ok := <-results:
+			if !ok {
+				return
+			}
+			fmt.Printf("result: %v\n", r)
+		case <-time.After(timeout):
+			fmt.Println("worker goroutine is dead")
+			return
+		}
+
+	}
 }
