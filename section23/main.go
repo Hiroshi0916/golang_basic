@@ -1,81 +1,68 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+)
 
-func generateVals() <-chan <-chan interface{} {
-	chanStream := make(chan (<-chan interface{}))
+func shortProcess(ctx context.Context) (bool, error) {
+	shortWork := time.NewTicker(1 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
+	defer cancel()
 
-	go func() {
-		defer close(chanStream)
-
-		for i := 0; i < 10; i++ {
-			stream := make(chan interface{}, 1)
-			stream <- i
-			close(stream)
-			chanStream <- stream
-		}
-	}()
-	return chanStream
+	select {
+	case <-ctx.Done():
+		return false, fmt.Errorf("cancel")
+	case <-shortWork.C:
+	}
+	return true, nil
 }
 
-func orDone(done, c <-chan interface{}) <-chan interface{} {
-	valChan := make(chan interface{})
+func longProcess(ctx context.Context) (bool, error) {
+	longWork := time.NewTicker(5 * time.Second)
 
-	go func() {
-		defer close(valChan)
-		for {
-			select {
-			case <-done:
-				return
-
-			case v, ok := <-c:
-				if !ok {
-					return
-				}
-
-				select {
-				case valChan <- v:
-				case <-done:
-				}
-			}
-		}
-	}()
-	return valChan
-}
-
-func bridge(done <-chan interface{}, chanCh <-chan <-chan interface{}) <-chan interface{} {
-	valCh := make(chan interface{})
-
-	go func() {
-		defer close(valCh)
-
-		for {
-			var ch <-chan interface{}
-			select {
-			case maybeCh, ok := <-chanCh:
-				if !ok {
-					return
-				}
-				ch = maybeCh
-			case <-done:
-				return
-			}
-
-			for v := range orDone(done, ch) {
-				select {
-				case valCh <- v:
-				case <-done:
-				}
-			}
-		}
-	}()
-	return valCh
+	select {
+	case <-ctx.Done():
+		return false, fmt.Errorf("cancel")
+	case <-longWork.C:
+	}
+	return true, nil
 }
 
 func main() {
-	done := make(chan interface{})
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	for v := range bridge(done, generateVals()) {
-		fmt.Println(v)
-	}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		if isDone, err := shortProcess(ctx); err != nil {
+			fmt.Printf("shortProcess: %v\n", err)
+			fmt.Println(isDone)
+
+			cancel()
+
+			return
+		}
+		fmt.Println("shortProcess is Done")
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if isDone, err := longProcess(ctx); err != nil {
+			fmt.Printf("longProcess: %v\n", err)
+			fmt.Println(isDone)
+
+			return
+		}
+		fmt.Println("longProcess is Done")
+	}()
+
+	wg.Wait()
 }
