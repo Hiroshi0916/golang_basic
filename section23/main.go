@@ -1,40 +1,38 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-func generator(done <-chan interface{}) <-chan interface{} {
-	intChan := make(chan interface{})
+func generateVals() <-chan <-chan interface{} {
+	chanStream := make(chan (<-chan interface{}))
 
 	go func() {
-		defer fmt.Println("generator Done")
-		defer close(intChan)
+		defer close(chanStream)
 
-		for i := 0; i < 100; i++ {
-			select {
-			case <-done:
-				return
-			case intChan <- i:
-			}
+		for i := 0; i < 10; i++ {
+			stream := make(chan interface{}, 1)
+			stream <- i
+			close(stream)
+			chanStream <- stream
 		}
 	}()
-	return intChan
+	return chanStream
 }
 
 func orDone(done, c <-chan interface{}) <-chan interface{} {
 	valChan := make(chan interface{})
+
 	go func() {
 		defer close(valChan)
-
 		for {
 			select {
 			case <-done:
 				return
+
 			case v, ok := <-c:
 				if !ok {
 					return
 				}
+
 				select {
 				case valChan <- v:
 				case <-done:
@@ -45,37 +43,39 @@ func orDone(done, c <-chan interface{}) <-chan interface{} {
 	return valChan
 }
 
-func tee(done, c <-chan interface{}) (<-chan interface{}, <-chan interface{}) {
-	out1 := make(chan interface{})
-	out2 := make(chan interface{})
+func bridge(done <-chan interface{}, chanCh <-chan <-chan interface{}) <-chan interface{} {
+	valCh := make(chan interface{})
 
 	go func() {
-		defer close(out1)
-		defer close(out1)
+		defer close(valCh)
 
-		for v := range orDone(done, c) {
-			var Out1, Out2 = out1, out2
-
-			for i := 0; i < 2; i++ {
-				select {
-				case Out1 <- v:
-					Out1 = nil
-				case Out2 <- v:
-					Out2 = nil
+		for {
+			var ch <-chan interface{}
+			select {
+			case maybeCh, ok := <-chanCh:
+				if !ok {
+					return
 				}
+				ch = maybeCh
+			case <-done:
+				return
 			}
 
+			for v := range orDone(done, ch) {
+				select {
+				case valCh <- v:
+				case <-done:
+				}
+			}
 		}
 	}()
-	return out1, out2
+	return valCh
 }
 
 func main() {
-
 	done := make(chan interface{})
 
-	out1, out2 := tee(done, generator(done))
-	for v1 := range out1 {
-		fmt.Printf("out1: %v,out2: %v\n", v1, <-out2)
+	for v := range bridge(done, generateVals()) {
+		fmt.Println(v)
 	}
 }
