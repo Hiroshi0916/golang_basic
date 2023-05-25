@@ -1,28 +1,46 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"io/ioutil"
+	"strings"
 )
 
-type ctxKey int
+func readGoFile(path string) chan string {
+	promise := make(chan string)
 
-const (
-	ctxUserID ctxKey = iota
-	ctxAuthToken
-)
-
-func Set(userID, authToken string) context.Context {
-	ctx := context.WithValue(context.Background(), ctxUserID, userID)
-	ctx = context.WithValue(ctx, ctxAuthToken, authToken)
-	return ctx
+	go func() {
+		defer close(promise)
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			fmt.Printf("read error: %v\n", err.Error())
+		} else {
+			promise <- string(content)
+		}
+	}()
+	return promise
 }
 
-func Get(ctx context.Context) {
-	fmt.Printf("userID: %v,authToken: %v\n", ctx.Value(ctxUserID), ctx.Value(ctxAuthToken))
+func printFunc(futureSource chan string) chan []string {
+	promise := make(chan []string)
+
+	go func() {
+		defer close(promise)
+		var result []string
+
+		for _, line := range strings.Split(<-futureSource, "\n") {
+			if strings.HasPrefix(line, "func") {
+				result = append(result, line)
+			}
+		}
+		promise <- result
+	}()
+	return promise
 }
 
 func main() {
-	ctx := Set("12345", "abc123")
-	Get(ctx)
+	futureSource := readGoFile("main.go")
+	futureFunc := printFunc(futureSource)
+
+	fmt.Println(strings.Join(<-futureFunc, "\n"))
 }
