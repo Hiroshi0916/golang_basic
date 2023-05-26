@@ -13,9 +13,18 @@ type User struct {
 	Email     string
 	PassWord  string
 	CreatedAt time.Time
+	Todos     []Todo
 }
 
-func (u *User) CreateUser() (int64, error) {
+type Session struct {
+	ID        int
+	UUID      string
+	Email     string
+	UserID    int
+	CreatedAt time.Time
+}
+
+func (u *User) CreateUser() (err error) {
 	cmd := `insert into users(
 		uuid,
 		name,
@@ -39,12 +48,13 @@ func (u *User) CreateUser() (int64, error) {
 		log.Fatalln(err)
 	}
 	fmt.Printf("User created with ID: %d\n", id)
-	return id, err
+	return err
 }
 
 func GetUser(id int) (user User, err error) {
 	user = User{}
-	cmd := `select id, uuid, name, email, password, created_at from users where id = ?`
+	cmd := `select id, uuid, name, email, password, created_at
+	 from users where id = ?`
 	err = Db.QueryRow(cmd, id).Scan(
 		&user.ID,
 		&user.UUID,
