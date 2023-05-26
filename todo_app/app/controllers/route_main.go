@@ -47,7 +47,6 @@ func todoSave(w http.ResponseWriter, r *http.Request) {
 		err = r.ParseForm()
 		if err != nil {
 			log.Println(err)
-
 		}
 		user, err := sess.GetUserBySession()
 		if err != nil {

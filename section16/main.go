@@ -52,8 +52,5 @@ func main() {
 		wg.Done()
 	}()
 
-	// for {
-
-	// }
 	wg.Wait()
 }

@@ -13,9 +13,9 @@ type User struct {
 	Email     string
 	PassWord  string
 	CreatedAt time.Time
-	Todos     []Todo
 }
 
+<<<<<<< HEAD
 type Session struct {
 	ID        int
 	UUID      string
@@ -25,6 +25,9 @@ type Session struct {
 }
 
 func (u *User) CreateUser() (err error) {
+=======
+func (u *User) CreateUser() (int64, error) {
+>>>>>>> 32bdc5b155031e95d435a6fb20e5b89df5f42004
 	cmd := `insert into users(
 		uuid,
 		name,
@@ -48,13 +51,12 @@ func (u *User) CreateUser() (err error) {
 		log.Fatalln(err)
 	}
 	fmt.Printf("User created with ID: %d\n", id)
-	return err
+	return id, err
 }
 
 func GetUser(id int) (user User, err error) {
 	user = User{}
-	cmd := `select id, uuid, name, email, password, created_at
-	 from users where id = ?`
+	cmd := `select id, uuid, name, email, password, created_at from users where id = ?`
 	err = Db.QueryRow(cmd, id).Scan(
 		&user.ID,
 		&user.UUID,
@@ -83,17 +85,25 @@ func (u *User) DeleteUser() (err error) {
 	return err
 }
 
-func GetUserByEmail(email string) (User, error) {
-	var user User
-	cmd := `SELECT * FROM users WHERE email = ?`
-	err := Db.QueryRow(cmd, email).Scan(&user.ID, &user.UUID, &user.Name, &user.Email, &user.PassWord, &user.CreatedAt)
+func (u *User) DeleteUser() (err error) {
+	cmd := `delete from users where id = ?`
+	_, err = Db.Exec(cmd, u.ID)
 	if err != nil {
-		return user, err
+		log.Fatalln(err)
 	}
-	return user, nil
+	return err
 }
 
-type Session struct {
-	UUID      string
-	CreatedAt time.Time
+func GetUserByEmail(email string) (user User, err error) {
+	user = User{}
+	cmd := `select id, uuid,name,email,password,created_at
+	from users where email=?`
+	err = Db.QueryRow(cmd, email).Scan(
+		&user.ID,
+		&user.UUID,
+		&user.Name,
+		&user.Email,
+		&user.PassWord,
+		&user.CreatedAt)
+	return user, err
 }
