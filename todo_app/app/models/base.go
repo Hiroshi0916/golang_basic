@@ -12,17 +12,13 @@ import (
 )
 
 var Db *sql.DB
+
 var err error
 
 const (
-<<<<<<< HEAD
 	tableNameUser    = "users"
 	tableNameTodo    = "todos"
 	tableNameSession = "sessions"
-=======
-	tableNameUser = "users"
-	tableNameTodo = "todos"
->>>>>>> 32bdc5b155031e95d435a6fb20e5b89df5f42004
 )
 
 func init() {
@@ -32,12 +28,12 @@ func init() {
 	}
 
 	cmdU := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	uuid STRING NOT NULL UNIQUE,
-	name STREING,
-	email STRING,
-	password STRING,
-	created_at DATETIME)`, tableNameUser)
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		uuid STRING NOT NULL UNIQUE,
+		name STRING,
+		email STRING,
+		password STRING,
+		created_at DATETIME)`, tableNameUser)
 
 	Db.Exec(cmdU)
 
@@ -48,7 +44,6 @@ func init() {
 		created_at DATETIME)`, tableNameTodo)
 
 	Db.Exec(cmdT)
-<<<<<<< HEAD
 
 	cmdS := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,9 +51,8 @@ func init() {
 		email STRING,
 		user_id INTEGER,
 		created_at DATETIME)`, tableNameSession)
+
 	Db.Exec(cmdS)
-=======
->>>>>>> 32bdc5b155031e95d435a6fb20e5b89df5f42004
 }
 
 func createUUID() (uuidobj uuid.UUID) {
