@@ -6,6 +6,10 @@ import (
 	"testing/todo_app/app/models"
 )
 
+func TestConnection() {
+
+}
+
 func main() {
 
 	fmt.Println(models.Db)
