@@ -7,7 +7,7 @@
 
 Youtube：[https://www.youtube.com/watch?v=lZD1MIHwMBY](https://www.youtube.com/watch?v=lZD1MIHwMBY)
 
-# Github Actions
+# Github Actions（済）
 
 Youtube：[https://www.youtube.com/watch?v=R7FtZfT6YBI](https://www.youtube.com/watch?v=R7FtZfT6YBI)
 
