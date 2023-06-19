@@ -2,79 +2,139 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
-func DoWorkVer1(done <-chan interface{}, palseInterval time.Duration) (<-chan interface{}, <-chan time.Time) {
-	heartbeat := make(chan interface{})
-	results := make(chan time.Time)
+type startGoroutineFn func(done <-chan interface{}, pulseInterval time.Duration) (heartbeat <-chan interface{})
 
-	go func() {
-		defer close(heartbeat)
-		defer close(results)
-		heartbeatPulse := time.Tick(palseInterval)
-		workGen := time.Tick(2 * palseInterval)
+func DoWorkFn(done <-chan interface{}, intList ...int) (startGoroutineFn, <-chan interface{}) {
+	intStream := make(chan interface{})
 
-		sendHeartBeatPulse := func() {
-			select {
-			case heartbeat <- struct{}{}:
-			default:
+	doWork := func(done <-chan interface{}, pulseInterval time.Duration) <-chan interface{} {
+		heartbeat := make(chan interface{})
 
-			}
-		}
-		sendResult := func(result time.Time) {
-			for {
-				select {
-				case <-done:
-					return
+		go func() {
+			pulse := time.Tick(pulseInterval)
 
-				case <-heartbeatPulse:
-					sendHeartBeatPulse()
-
-				case results <- result.Local():
+		valueLoop:
+			for _, i := range intList {
+				if i < 0 {
+					log.Printf("negative value: %v\n", i)
 					return
 				}
+
+				for {
+					select {
+					case <-pulse:
+						select {
+						case heartbeat <- struct{}{}:
+						default:
+						}
+					case intStream <- i:
+						continue valueLoop
+
+					case <-done:
+						return
+					}
+				}
 			}
-		}
+		}()
+		return heartbeat
+	}
+	return doWork, intStream
+}
 
-		for {
+func newSteward(timeout time.Duration, startGoroutine startGoroutineFn) startGoroutineFn {
+	return func(done <-chan interface{}, pulseInterval time.Duration) <-chan interface{} {
+		heartbeat := make(chan interface{})
+
+		go func() {
+			defer close(heartbeat)
+
+			var wardDone chan interface{}
+			var wardHeartbeat <-chan interface{}
+
+			startWard := func() {
+				wardDone = make(chan interface{})
+				wardHeartbeat = startGoroutine(or(done, wardDone), timeout/2)
+
+			}
+			startWard()
+			pulse := time.Tick(pulseInterval)
+
+		monitorLoop:
+			for {
+				timeoutSignal := time.After(timeout)
+
+				for {
+					select {
+					case <-pulse:
+						select {
+						case heartbeat <- struct{}{}:
+						default:
+						}
+					case <-wardHeartbeat:
+						continue monitorLoop
+
+					case <-timeoutSignal:
+						log.Println("steward: ward is dead; restarting")
+						close(wardDone)
+						startWard()
+
+						continue monitorLoop
+
+					case <-done:
+						return
+					}
+				}
+			}
+		}()
+		return heartbeat
+	}
+}
+
+func or(channels ...<-chan interface{}) <-chan interface{} {
+	switch len(channels) {
+	case 0:
+		return nil
+	case 1:
+		return channels[0]
+	}
+
+	orDone := make(chan interface{})
+
+	go func() {
+		defer close(orDone)
+
+		switch len(channels) {
+		case 2:
 			select {
-			case <-done:
-				return
+			case <-channels[0]:
+			case <-channels[1]:
+			}
+		default:
+			select {
+			case <-channels[0]:
+			case <-channels[1]:
+			case <-channels[2]:
 
-			case <-heartbeatPulse:
-				sendHeartBeatPulse()
-
-			case result := <-workGen:
-				sendResult(result)
+			case <-or(append(channels[3:], orDone)...):
 			}
 		}
 	}()
-	return heartbeat, results
+	return orDone
 }
 
 func main() {
 	done := make(chan interface{})
-	timeout := 2 * time.Second
-	heartbeat, results := DoWorkVer1(done, timeout/2)
+	defer close(done)
+	doWork, intStream := DoWorkFn(done, 1, 2, -1, 3, 4, 5)
+	doWorkWithSteward := newSteward(1*time.Second, doWork)
 
-	for {
-		select {
-		case _, ok := <-heartbeat:
-			if !ok {
-				return
-			}
-			fmt.Println("receive heatbeat")
+	doWorkWithSteward(done, 1*time.Second)
 
-		case r, ok := <-results:
-			if !ok {
-				return
-			}
-			fmt.Printf("result: %v\n", r)
-		case <-time.After(timeout):
-			fmt.Println("worker goroutine is dead")
-			return
-		}
-
+	for i := range intStream {
+		fmt.Printf("Received : %v\n", i)
 	}
 }
