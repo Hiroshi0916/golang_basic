@@ -7,7 +7,7 @@
 
 Youtube：[https://www.youtube.com/watch?v=lZD1MIHwMBY](https://www.youtube.com/watch?v=lZD1MIHwMBY)
 
-# Github Actions
+# Github Actions（済）
 
 Youtube：[https://www.youtube.com/watch?v=R7FtZfT6YBI](https://www.youtube.com/watch?v=R7FtZfT6YBI)
 
@@ -20,7 +20,7 @@ Youtube：[https://www.youtube.com/watch?v=v-Mb2voyTbc](https://www.youtube.com/
 
 Youtube：[https://www.youtube.com/watch?v=CJQDh_mJ1as&t=4s](https://www.youtube.com/watch?v=CJQDh_mJ1as&t=4s)
 
-# Golang(完了状況 191/216)
+# Golang(完了状況 215/216)
 Udemy：[https://www.udemy.com/course/golang-webgosql/](https://www.udemy.com/course/golang-webgosql/)
 
 (Youtube：[https://www.youtube.com/watch?v=kPXfMFJ0oIE](https://www.youtube.com/watch?v=kPXfMFJ0oIE) )
